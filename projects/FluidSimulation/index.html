@@ -75,8 +75,91 @@
     <a href="https://mileswind.github.io/ProjectShare/About/" class="about">About</a>
     <a href="https://mileswind.github.io/ProjectShare/Contact/" class="contact">Contact</a>
   </div>
+  <canvas id="canvas"></canvas>
   
-	<canvas id="canvas"></canvas>
+  <script>
+    var canvas = document.getElementById("canvas");
+    canvas.width = screen.width;
+    canvas.height = screen.height;
+    var ctx = canvas.getContext('2d');
+    ctx.fillStyle = "#000000";
+    ctx.strokeStyle = "#000000";
+        
+    class Line{
+      constructor(m, b){
+        this.m = m;
+        this.b = b;
+      }
+      solve(x){
+        return x*this.m + this.b;
+      }
+    }
+    
+    class Player{
+      constructor(pos){
+        this.pos = pos;
+      }
+      closePoint(pos, l){
+        let m = 1/-l.m;
+        let b = pos[1] - m*pos[0];
+        let x = (b - l.b) / (l.m - m);
+        let y = l.solve(x);
+        return [x, y];
+      }
+      dash(l){
+        let pos = this.closePoint(this.pos, l);
+        this.pos = [2*pos[0]-this.pos[0], 2*pos[1]-this.pos[1]];
+      }
+    }
+    
+    function PointsToLine(p_a, p_b){
+      let m = (p_a[1]-p_b[1]) / (p_a[0]-p_b[0]);
+      let b = p_a[1] - m*p_b[0];
+      return new Line(m, b);
+    }
+    
+    
+    var lines = [];
+    for (let i=0; i<10; i++){
+      let p_a = [Math.random()*canvas.width,Math.random()*canvas.height];
+      let p_b = [Math.random()*canvas.width,Math.random()*canvas.height];
+      lines.push(PointsToLine(p_a, p_b));
+    }
+    var player = new Player([canvas.width/2, canvas.height/2]);
+        
+        
+    function draw(){
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      let x = player.pos[0];
+      let y = player.pos[1];
+      let r = 10;
+      ctx.fillRect(x-r/2, y-r/2, r, r);
+      
+      for (let i=0; i<lines.length; i++){
+        let m = lines[i].m;
+        let b = lines[i].b;
+        ctx.moveTo(0, b);
+        ctx.lineTo(canvas.width, canvas.width*m+b);
+        ctx.stroke();
+      }
+    }
+    
+    function update(e){
+      var dists = [];
+      for (let i=0; i<lines.length; i++){
+        let p = player.closePoint([e.x, e.y], lines[i]);
+        let dist = ((e.x-p[0])**2+(e.y-p[1])**2)**0.5;
+        dists.push(dist);
+      }
+      let i = dists.indexOf(Math.min(...dists));
+      player.dash(lines[i]);
+      
+      draw();
+    }
+    
+    draw();
+    canvas.onmousedown = update;
+  </script>
   
 </body>
 </html>
